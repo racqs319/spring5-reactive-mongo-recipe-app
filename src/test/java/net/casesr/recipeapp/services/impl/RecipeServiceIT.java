@@ -6,15 +6,12 @@ import net.casesr.recipeapp.converters.RecipeToRecipeCommand;
 import net.casesr.recipeapp.domain.Recipe;
 import net.casesr.recipeapp.repositories.RecipeRepository;
 import net.casesr.recipeapp.services.RecipeService;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Disabled
 @SpringBootTest
 public class RecipeServiceIT {
 
@@ -32,7 +29,6 @@ public class RecipeServiceIT {
     @Autowired
     RecipeToRecipeCommand recipeToRecipeCommand;
 
-    @Transactional
     @Test
     public void testSaveDescription() throws Exception {
         //given

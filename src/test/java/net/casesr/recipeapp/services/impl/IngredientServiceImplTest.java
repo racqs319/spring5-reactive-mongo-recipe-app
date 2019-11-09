@@ -1,6 +1,7 @@
 package net.casesr.recipeapp.services.impl;
 
 import net.casesr.recipeapp.commands.IngredientCommand;
+import net.casesr.recipeapp.commands.UnitOfMeasureCommand;
 import net.casesr.recipeapp.converters.IngredientCommandToIngredient;
 import net.casesr.recipeapp.converters.IngredientToIngredientCommand;
 import net.casesr.recipeapp.converters.UnitOfMeasureCommandToUnitOfMeasure;
@@ -8,12 +9,14 @@ import net.casesr.recipeapp.converters.UnitOfMeasureToUnitOfMeasureCommand;
 import net.casesr.recipeapp.domain.Ingredient;
 import net.casesr.recipeapp.domain.Recipe;
 import net.casesr.recipeapp.repositories.RecipeRepository;
-import net.casesr.recipeapp.repositories.UnitOfMeasureRepository;
+import net.casesr.recipeapp.repositories.reactive.RecipeReactiveRepository;
+import net.casesr.recipeapp.repositories.reactive.UnitOfMeasureReactiveRepository;
 import net.casesr.recipeapp.services.IngredientService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
@@ -28,10 +31,13 @@ public class IngredientServiceImplTest {
     private final IngredientCommandToIngredient ingredientCommandToIngredient;
 
     @Mock
+    RecipeReactiveRepository recipeReactiveRepository;
+
+    @Mock
     RecipeRepository recipeRepository;
 
     @Mock
-    UnitOfMeasureRepository unitOfMeasureRepository;
+    UnitOfMeasureReactiveRepository unitOfMeasureRepository;
 
     IngredientService ingredientService;
 
@@ -47,7 +53,8 @@ public class IngredientServiceImplTest {
         MockitoAnnotations.initMocks(this);
 
         ingredientService = new IngredientServiceImpl(ingredientToIngredientCommand,
-                ingredientCommandToIngredient, recipeRepository, unitOfMeasureRepository);
+                ingredientCommandToIngredient, recipeReactiveRepository, unitOfMeasureRepository,
+                recipeRepository);
     }
 
     @Test
@@ -76,13 +83,14 @@ public class IngredientServiceImplTest {
 
         Optional<Recipe> recipeOptional = Optional.of(recipe);
 
-        when(recipeRepository.findById(anyString())).thenReturn(recipeOptional);
+        when(recipeReactiveRepository.findById(anyString())).thenReturn(Mono.just(recipe));
 
         //then
-        IngredientCommand ingredientCommand = ingredientService.findByRecipeIdAndIngredientId("1", "3");
+        IngredientCommand ingredientCommand =
+                ingredientService.findByRecipeIdAndIngredientId("1", "3").block();
 
         assertEquals("3", ingredientCommand.getId());
-        verify(recipeRepository, times(1)).findById(anyString());
+        verify(recipeReactiveRepository, times(1)).findById(anyString());
     }
 
     @Test
@@ -91,6 +99,8 @@ public class IngredientServiceImplTest {
         IngredientCommand ingredientCommand = new IngredientCommand();
         ingredientCommand.setId("3");
         ingredientCommand.setRecipeId("2");
+        ingredientCommand.setUom(new UnitOfMeasureCommand());
+        ingredientCommand.getUom().setId("1234");
 
         Optional<Recipe> recipeOptional = Optional.of(new Recipe());
 
@@ -99,15 +109,15 @@ public class IngredientServiceImplTest {
         savedRecipe.getIngredients().iterator().next().setId("3");
 
         when(recipeRepository.findById(anyString())).thenReturn(recipeOptional);
-        when(recipeRepository.save(any())).thenReturn(savedRecipe);
+        when(recipeReactiveRepository.save(any())).thenReturn(Mono.just(savedRecipe));
 
         //when
-        IngredientCommand savedCommand = ingredientService.saveIngredientCommand(ingredientCommand);
+        IngredientCommand savedCommand = ingredientService.saveIngredientCommand(ingredientCommand).block();
 
         //then
         assertEquals("3", savedCommand.getId());
         verify(recipeRepository, times(1)).findById(anyString());
-        verify(recipeRepository, times(1)).save(any(Recipe.class));
+        verify(recipeReactiveRepository, times(1)).save(any(Recipe.class));
     }
 
     @Test
