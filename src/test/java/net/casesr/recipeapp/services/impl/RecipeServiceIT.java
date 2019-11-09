@@ -4,7 +4,7 @@ import net.casesr.recipeapp.commands.RecipeCommand;
 import net.casesr.recipeapp.converters.RecipeCommandToRecipe;
 import net.casesr.recipeapp.converters.RecipeToRecipeCommand;
 import net.casesr.recipeapp.domain.Recipe;
-import net.casesr.recipeapp.repositories.RecipeRepository;
+import net.casesr.recipeapp.repositories.reactive.RecipeReactiveRepository;
 import net.casesr.recipeapp.services.RecipeService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ public class RecipeServiceIT {
     RecipeService recipeService;
 
     @Autowired
-    RecipeRepository recipeRepository;
+    RecipeReactiveRepository recipeRepository;
 
     @Autowired
     RecipeCommandToRecipe recipeCommandToRecipe;
@@ -32,13 +32,13 @@ public class RecipeServiceIT {
     @Test
     public void testSaveDescription() throws Exception {
         //given
-        Iterable<Recipe> recipes = recipeRepository.findAll();
+        Iterable<Recipe> recipes = recipeRepository.findAll().collectList().block();
         Recipe testRecipe = recipes.iterator().next();
         RecipeCommand testRecipeCommand = recipeToRecipeCommand.convert(testRecipe);
 
         //when
         testRecipeCommand.setDescription(NEW_DESCRIPTION);
-        RecipeCommand savedRecipeCommand = recipeService.saveRecipeCommand(testRecipeCommand);
+        RecipeCommand savedRecipeCommand = recipeService.saveRecipeCommand(testRecipeCommand).block();
 
         //then
         assertEquals(NEW_DESCRIPTION, savedRecipeCommand.getDescription());

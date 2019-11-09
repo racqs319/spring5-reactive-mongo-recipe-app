@@ -20,7 +20,7 @@ public class IndexController {
 	@GetMapping({"", "/", "/index", "/index.html"})
 	public String getIndexPage(Model model) {
 		log.debug("Add list of recipes in index page");
-		model.addAttribute("recipes", recipeService.getRecipes());
+		model.addAttribute("recipes", recipeService.getRecipes().collectList().block());
 		
 		return "index";
 	}
