@@ -4,10 +4,11 @@ import lombok.extern.slf4j.Slf4j;
 import net.casesr.recipeapp.commands.UnitOfMeasureCommand;
 import net.casesr.recipeapp.converters.UnitOfMeasureToUnitOfMeasureCommand;
 import net.casesr.recipeapp.repositories.UnitOfMeasureRepository;
+import net.casesr.recipeapp.repositories.reactive.UnitOfMeasureReactiveRepository;
 import net.casesr.recipeapp.services.UnitOfMeasureService;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -15,20 +16,19 @@ import java.util.stream.StreamSupport;
 @Service
 public class UnitOfMeasureServiceImpl implements UnitOfMeasureService {
 
-    private final UnitOfMeasureRepository unitOfMeasureRepository;
+    private final UnitOfMeasureReactiveRepository unitOfMeasureReactiveRepository;
     private final UnitOfMeasureToUnitOfMeasureCommand command;
 
-    public UnitOfMeasureServiceImpl(UnitOfMeasureRepository unitOfMeasureRepository,
+    public UnitOfMeasureServiceImpl(UnitOfMeasureReactiveRepository unitOfMeasureReactiveRepository,
                                     UnitOfMeasureToUnitOfMeasureCommand command) {
-        this.unitOfMeasureRepository = unitOfMeasureRepository;
+        this.unitOfMeasureReactiveRepository = unitOfMeasureReactiveRepository;
         this.command = command;
     }
 
     @Override
-    public Set<UnitOfMeasureCommand> listAllUoms() {
-        return StreamSupport.stream(unitOfMeasureRepository.findAll()
-                    .spliterator(), false)
-                .map(command::convert)
-                .collect(Collectors.toSet());
+    public Flux<UnitOfMeasureCommand> listAllUoms() {
+        return unitOfMeasureReactiveRepository
+                .findAll()
+                .map(command::convert);
     }
 }
