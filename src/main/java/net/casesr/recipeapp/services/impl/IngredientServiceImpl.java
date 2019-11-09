@@ -6,7 +6,6 @@ import net.casesr.recipeapp.converters.IngredientCommandToIngredient;
 import net.casesr.recipeapp.converters.IngredientToIngredientCommand;
 import net.casesr.recipeapp.domain.Ingredient;
 import net.casesr.recipeapp.domain.Recipe;
-import net.casesr.recipeapp.repositories.RecipeRepository;
 import net.casesr.recipeapp.repositories.reactive.RecipeReactiveRepository;
 import net.casesr.recipeapp.repositories.reactive.UnitOfMeasureReactiveRepository;
 import net.casesr.recipeapp.services.IngredientService;
@@ -22,19 +21,16 @@ public class IngredientServiceImpl implements IngredientService {
     private final IngredientToIngredientCommand ingredientToIngredientCommand;
     private final IngredientCommandToIngredient ingredientCommandToIngredient;
     private final RecipeReactiveRepository recipeReactiveRepository;
-    private final RecipeRepository recipeRepository;
     private final UnitOfMeasureReactiveRepository unitOfMeasureRepository;
 
     public IngredientServiceImpl(IngredientToIngredientCommand ingredientToIngredientCommand,
                                  IngredientCommandToIngredient ingredientCommandToIngredient,
                                  RecipeReactiveRepository recipeReactiveRepository,
-                                 UnitOfMeasureReactiveRepository unitOfMeasureRepository,
-                                 RecipeRepository recipeRepository) {
+                                 UnitOfMeasureReactiveRepository unitOfMeasureRepository) {
         this.ingredientToIngredientCommand = ingredientToIngredientCommand;
         this.ingredientCommandToIngredient = ingredientCommandToIngredient;
         this.recipeReactiveRepository = recipeReactiveRepository;
         this.unitOfMeasureRepository = unitOfMeasureRepository;
-        this.recipeRepository = recipeRepository;
     }
 
     @Override
@@ -74,14 +70,12 @@ public class IngredientServiceImpl implements IngredientService {
 
     @Override
     public Mono<IngredientCommand> saveIngredientCommand(IngredientCommand ingredientCommand) {
-        Optional<Recipe> recipeOptional = recipeRepository.findById(ingredientCommand.getRecipeId());
+        Recipe recipe = recipeReactiveRepository.findById(ingredientCommand.getRecipeId()).block();
 
-        if (!recipeOptional.isPresent()) {
+        if (recipe == null) {
             log.error("Recipe not found for id: " + ingredientCommand.getRecipeId());
             return Mono.just(new IngredientCommand());
         } else {
-            Recipe recipe = recipeOptional.get();
-
             Optional<Ingredient> ingredientOptional = recipe
                     .getIngredients()
                     .stream()
@@ -94,7 +88,6 @@ public class IngredientServiceImpl implements IngredientService {
                 ingredientFound.setAmount(ingredientCommand.getAmount());
                 ingredientFound.setUom(unitOfMeasureRepository
                         .findById(ingredientCommand.getUom().getId()).block());
-//                        .orElseThrow(() -> new RuntimeException("UOM NOT FOUND")));
                 if (ingredientFound.getUom() == null) {
                     new RuntimeException("UOM NOT FOUND");
                 }
@@ -134,7 +127,7 @@ public class IngredientServiceImpl implements IngredientService {
     public Mono<Void> deleteById(String recipeId, String idToDelete) {
         log.debug("Deleting ingredient: " + recipeId + ":" + idToDelete);
 
-        Recipe recipe = recipeRepository.findById(recipeId).get();
+        Recipe recipe = recipeReactiveRepository.findById(recipeId).block();
 
         if (recipe != null) {
             log.debug("found recipe");
@@ -149,7 +142,7 @@ public class IngredientServiceImpl implements IngredientService {
                 log.debug("found ingredient");
 
                 recipe.getIngredients().remove(ingredientOptional.get());
-                recipeRepository.save(recipe);
+                recipeReactiveRepository.save(recipe).block();
 
             }
         } else {

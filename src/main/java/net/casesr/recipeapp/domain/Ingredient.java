@@ -2,7 +2,6 @@ package net.casesr.recipeapp.domain;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
@@ -16,8 +15,6 @@ public class Ingredient {
 	private String id = UUID.randomUUID().toString();
 	private String description;
 	private BigDecimal amount;
-
-	@DBRef
 	private UnitOfMeasure uom;
 	private Recipe recipe;
 	
